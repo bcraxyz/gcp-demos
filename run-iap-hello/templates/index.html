@@ -1,63 +1,289 @@
 <!doctype html>
 <html>
 <head>
-  <title>IAP Authentication Status</title>
+  <title>IAP Auth Summary</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 40px; }
-    .section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+    body { 
+      font-family: Arial, sans-serif; 
+      margin: 20px;
+      background-color: #f5f5f5;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background-color: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #333;
+      border-bottom: 3px solid #4285f4;
+      padding-bottom: 10px;
+    }
+    .section { 
+      margin: 20px 0; 
+      padding: 15px; 
+      border: 1px solid #ddd; 
+      border-radius: 5px;
+      background-color: #fff;
+    }
+    .section h2 {
+      margin-top: 0;
+      color: #555;
+      font-size: 1.2em;
+    }
     .header { background-color: #f5f5f5; }
-    .jwt { background-color: #fff3cd; }
-    .success { background-color: #d4edda; }
-    .warning { background-color: #f8d7da; }
-    .code { font-family: monospace; background-color: #f8f9fa; padding: 2px 4px; border-radius: 3px; }
+    .success { 
+      background-color: #d4edda; 
+      border-color: #c3e6cb;
+    }
+    .warning { 
+      background-color: #fff3cd; 
+      border-color: #ffeeba;
+    }
+    .error { 
+      background-color: #f8d7da; 
+      border-color: #f5c6cb;
+    }
+    .info {
+      background-color: #d1ecf1;
+      border-color: #bee5eb;
+    }
+    .code, pre { 
+      font-family: 'Courier New', monospace; 
+      background-color: #f8f9fa; 
+      padding: 2px 4px; 
+      border-radius: 3px;
+      font-size: 0.9em;
+    }
+    pre {
+      padding: 10px;
+      overflow-x: auto;
+      border: 1px solid #e1e4e8;
+    }
+    .highlight { 
+      background-color: #ffff99; 
+      padding: 2px 4px;
+      font-weight: bold;
+    }
+    .status-indicator {
+      display: inline-block;
+      font-size: 1.2em;
+      margin-right: 5px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 10px 0;
+    }
+    table td {
+      padding: 8px;
+      border-bottom: 1px solid #ddd;
+    }
+    table td:first-child {
+      font-weight: bold;
+      width: 30%;
+      color: #555;
+    }
+    .collapsible {
+      background-color: #f1f1f1;
+      cursor: pointer;
+      padding: 10px;
+      border: none;
+      text-align: left;
+      outline: none;
+      font-size: 1em;
+      border-radius: 3px;
+      margin: 10px 0;
+      width: 100%;
+      font-weight: bold;
+    }
+    .collapsible:hover {
+      background-color: #ddd;
+    }
+    .collapsible:after {
+      content: '\002B';
+      color: #777;
+      font-weight: bold;
+      float: right;
+      margin-left: 5px;
+    }
+    .collapsible.active:after {
+      content: "\2212";
+    }
+    .content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.2s ease-out;
+    }
   </style>
 </head>
 <body>
-  <h1>IAP Authentication Status</h1>
+  <div class="container">
+    <h1>🔐 IAP Authentication Debug</h1>
 
-  <div class="section">
-    <h2>🎯 Authentication Status</h2>
-    {% if email or verified_email %}
-      <p class="success">✅ <strong>Authentication successful</strong></p>
-      <p>User: {{ verified_email or email }}</p>
-    {% else %}
-      <p class="warning">❌ <strong>No authentication found</strong></p>
-      <p>This request may not be coming through IAP, or IAP is not properly configured.</p>
+    <!-- Quick Status Overview -->
+    <div class="section {% if verified_email %}success{% elif iap_jwt %}warning{% else %}error{% endif %}">
+      <h2>
+        <span class="status-indicator">{% if verified_email %}✅{% elif iap_jwt %}⚠️{% else %}❌{% endif %}</span>
+        Authentication Status
+      </h2>
+      {% if verified_email %}
+        <p><strong>Authentication successful and verified!</strong></p>
+        <p>Authenticated user: <span class="highlight">{{ verified_email }}</span></p>
+      {% elif iap_jwt %}
+        <p><strong>JWT token present but verification failed</strong></p>
+        <p>This could indicate a configuration issue or IAP bypass attempt.</p>
+      {% else %}
+        <p><strong>No IAP authentication detected</strong></p>
+        <p>This request is not coming through IAP, or IAP is not properly configured.</p>
+      {% endif %}
+    </div>
+
+    <!-- Configuration Status -->
+    <div class="section header">
+      <h2>⚙️ IAP Configuration</h2>
+      <table>
+        <tr>
+          <td>IAP Client ID (env)</td>
+          <td><span class="{% if iap_client_id %}highlight{% else %}code{% endif %}">{{ iap_client_id or 'Not set' }}</span></td>
+        </tr>
+        <tr>
+          <td>JWT Token Present</td>
+          <td><span class="{% if iap_jwt %}highlight{% else %}code{% endif %}">{{ 'Yes' if iap_jwt else 'No' }}</span></td>
+        </tr>
+        <tr>
+          <td>User Email Header</td>
+          <td><span class="code">{{ email or 'Not present' }}</span></td>
+        </tr>
+        <tr>
+          <td>User ID Header</td>
+          <td><span class="code">{{ id or 'Not present' }}</span></td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Verified JWT Information -->
+    {% if verified_email %}
+    <div class="section success">
+      <h2>✅ Verified JWT Claims</h2>
+      <p><em>These values have been cryptographically verified against Google's public keys.</em></p>
+      <table>
+        <tr>
+          <td>Email</td>
+          <td>{{ verified_email }}</td>
+        </tr>
+        <tr>
+          <td>User ID (sub)</td>
+          <td>{{ verified_id }}</td>
+        </tr>
+        <tr>
+          <td>Audience (aud)</td>
+          <td>{{ verified_aud }}</td>
+        </tr>
+        <tr>
+          <td>Issuer (iss)</td>
+          <td>{{ verified_iss }}</td>
+        </tr>
+        <tr>
+          <td>Hosted Domain (hd)</td>
+          <td>{{ verified_hd if verified_hd else 'Not specified' }}</td>
+        </tr>
+        <tr>
+          <td>Google Claims</td>
+          <td>{{ verified_goog if verified_goog else 'None' }}</td>
+        </tr>
+      </table>
+    </div>
     {% endif %}
-  </div>
-  
-  <div class="section header">
-    <h2>🔍 Authentication Headers</h2>
-    <p><strong>X-Goog-Authenticated-User-Email:</strong> 
-      <span class="code">{{ email if email else 'Not present' }}</span>
-    </p>
-    <p><strong>X-Goog-Authenticated-User-ID:</strong> 
-      <span class="code">{{ id if id else 'Not present' }}</span>
-    </p>
-    <p><strong>X-Serverless-Authorization:</strong> 
-      <span class="code">{{ serverless_auth if serverless_auth else 'Not present' }}</span>
-    </p>
-    <p><strong>X-Goog-IAP-JWT-Assertion:</strong> 
-      <span class="code">{{ iap_jwt if iap_jwt else 'Not present'  }}</span>
-    </p>
+
+    <!-- Unverified JWT Debug Info -->
+    {% if iap_jwt %}
+    <div class="section info">
+      <h2>🔍 JWT Debug Information (Unverified)</h2>
+      <p><em>This information is extracted without verification - for debugging only.</em></p>
+      
+      <button type="button" class="collapsible">JWT Header</button>
+      <div class="content">
+        <pre>{{ jwt_header if jwt_header else 'Unable to decode' }}</pre>
+      </div>
+
+      <button type="button" class="collapsible">JWT Claims</button>
+      <div class="content">
+        <pre>{{ jwt_claims if jwt_claims else 'Unable to decode' }}</pre>
+      </div>
+
+      <button type="button" class="collapsible">Raw JWT Token (preview)</button>
+      <div class="content">
+        <pre>{{ iap_jwt_preview }}</pre>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- All Request Headers -->
+    <div class="section">
+      <h2>📋 All Request Headers</h2>
+      <button type="button" class="collapsible">Show Headers</button>
+      <div class="content">
+        <pre>{{ all_headers }}</pre>
+      </div>
+    </div>
+
+    <!-- IAP Environment Variables -->
+    {% if iap_env_vars %}
+    <div class="section">
+      <h2>🌍 IAP-Related Environment Variables</h2>
+      <button type="button" class="collapsible">Show Environment Variables</button>
+      <div class="content">
+        <pre>{{ iap_env_vars }}</pre>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Request Information -->
+    <div class="section">
+      <h2>📊 Request Information</h2>
+      <table>
+        <tr>
+          <td>URL</td>
+          <td>{{ request_url }}</td>
+        </tr>
+        <tr>
+          <td>Method</td>
+          <td>{{ request_method }}</td>
+        </tr>
+        <tr>
+          <td>Remote Address</td>
+          <td>{{ request_remote_addr }}</td>
+        </tr>
+        <tr>
+          <td>Host</td>
+          <td>{{ request_host }}</td>
+        </tr>
+        <tr>
+          <td>User Agent</td>
+          <td>{{ request_user_agent }}</td>
+        </tr>
+      </table>
+    </div>
+
   </div>
 
-  {% if verified_email %}
-  <div class="section success">
-    <h2>✅ JWT Verified Information</h2>
-    <p><strong>Email:</strong> {{ verified_email }}</p>
-    <p><strong>User ID:</strong> {{ verified_id }}</p>
-    <p><strong>Audience:</strong> {{ verified_aud }}</p>
-    <p><strong>Issuer:</strong> {{ verified_iss }}</p>
-    <p><strong>Hosted Domain:</strong> {{ verified_hd if verified_hd else 'Not specified' }}</p>
-    <p><strong>Google Claims:</strong> {{ verified_goog if verified_goog else 'None' }}</p>
-  </div>
-  {% else %}
-  <div class="section warning">
-    <h2>⚠️ No JWT Verification</h2>
-    <p>JWT verification failed or is not available. This request may not be coming through IAP, or IAP is not properly configured.</p>
-  </div>
-  {% endif %}
-
+  <script>
+    // Collapsible sections
+    var coll = document.getElementsByClassName("collapsible");
+    for (var i = 0; i < coll.length; i++) {
+      coll[i].addEventListener("click", function() {
+        this.classList.toggle("active");
+        var content = this.nextElementSibling;
+        if (content.style.maxHeight){
+          content.style.maxHeight = null;
+        } else {
+          content.style.maxHeight = content.scrollHeight + "px";
+        } 
+      });
+    }
+  </script>
 </body>
 </html>
