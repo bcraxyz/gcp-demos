@@ -31,6 +31,22 @@ def audience():
             raise ValueError("IAP_CLIENT_ID environment variable not set")
     return AUDIENCE
 
+# Get unverified JWT information for debugging purposes
+def get_unverified_jwt_info():
+    """Extract JWT header and claims without verification for debugging"""
+    iap_jwt = request.headers.get('X-Goog-IAP-JWT-Assertion')
+    
+    if not iap_jwt:
+        return None, None
+    
+    try:
+        jwt_header = jwt.get_unverified_header(iap_jwt)
+        jwt_claims = jwt.get_unverified_claims(iap_jwt)
+        return jwt_header, jwt_claims
+    except Exception as e:
+        logger.error(f"Error decoding unverified JWT: {str(e)}")
+        return None, f"Error decoding JWT: {str(e)}"
+
 # Return the authenticated user's email address and persistent user ID if
 # available from Cloud Identity Aware Proxy (IAP). If IAP is not active, returns None.
 #
