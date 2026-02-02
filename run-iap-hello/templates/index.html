@@ -121,88 +121,81 @@
 </head>
 <body>
   <div class="container">
-    <h1>🔐 IAP Authentication Debug</h1>
+    <h1>🔐 IAP Debug Tool</h1>
 
     <!-- Quick Status Overview -->
-    <div class="section {% if verified_email %}success{% elif iap_jwt %}warning{% else %}error{% endif %}">
+    <div class="section {% if jwt_email or email %}success{% elif iap_jwt %}warning{% else %}error{% endif %}">
       <h2>
-        <span class="status-indicator">{% if verified_email %}✅{% elif iap_jwt %}⚠️{% else %}❌{% endif %}</span>
-        Authentication Status
+        <span class="status-indicator">{% if jwt_email or email %}✅{% elif iap_jwt %}⚠️{% else %}❌{% endif %}</span>
+        IAP Status
       </h2>
-      {% if verified_email %}
-        <p><strong>Authentication successful and verified!</strong></p>
-        <p>Authenticated user: <span class="highlight">{{ verified_email }}</span></p>
+      {% if jwt_email or email %}
+        <p><strong>IAP is active</strong></p>
+        <p>Authenticated user: <span class="highlight">{{ jwt_email or email }}</span></p>
       {% elif iap_jwt %}
-        <p><strong>JWT token present but verification failed</strong></p>
-        <p>This could indicate a configuration issue or IAP bypass attempt.</p>
+        <p><strong>JWT token present but could not be decoded</strong></p>
       {% else %}
         <p><strong>No IAP authentication detected</strong></p>
-        <p>This request is not coming through IAP, or IAP is not properly configured.</p>
+        <p>This request is not coming through IAP.</p>
       {% endif %}
     </div>
 
-    <!-- Configuration Status -->
+    <!-- IAP Headers -->
     <div class="section header">
-      <h2>⚙️ IAP Configuration</h2>
+      <h2>🔑 IAP Headers</h2>
       <table>
         <tr>
-          <td>IAP Client ID (env)</td>
-          <td><span class="{% if iap_client_id %}highlight{% else %}code{% endif %}">{{ iap_client_id or 'Not set' }}</span></td>
-        </tr>
-        <tr>
-          <td>JWT Token Present</td>
-          <td><span class="{% if iap_jwt %}highlight{% else %}code{% endif %}">{{ 'Yes' if iap_jwt else 'No' }}</span></td>
-        </tr>
-        <tr>
-          <td>User Email Header</td>
+          <td>X-Goog-Authenticated-User-Email</td>
           <td><span class="code">{{ email or 'Not present' }}</span></td>
         </tr>
         <tr>
-          <td>User ID Header</td>
+          <td>X-Goog-Authenticated-User-ID</td>
           <td><span class="code">{{ id or 'Not present' }}</span></td>
+        </tr>
+        <tr>
+          <td>X-Serverless-Authorization</td>
+          <td><span class="code">{{ serverless_auth or 'Not present' }}</span></td>
+        </tr>
+        <tr>
+          <td>X-Goog-IAP-JWT-Assertion</td>
+          <td><span class="code">{{ 'Present' if iap_jwt else 'Not present' }}</span></td>
         </tr>
       </table>
     </div>
 
-    <!-- Verified JWT Information -->
-    {% if verified_email %}
+    <!-- JWT Claims -->
+    {% if jwt_email %}
     <div class="section success">
-      <h2>✅ Verified JWT Claims</h2>
-      <p><em>These values have been cryptographically verified against Google's public keys.</em></p>
+      <h2>📋 JWT Claims</h2>
       <table>
         <tr>
           <td>Email</td>
-          <td>{{ verified_email }}</td>
+          <td>{{ jwt_email }}</td>
         </tr>
         <tr>
           <td>User ID (sub)</td>
-          <td>{{ verified_id }}</td>
+          <td>{{ jwt_sub }}</td>
         </tr>
         <tr>
           <td>Audience (aud)</td>
-          <td>{{ verified_aud }}</td>
+          <td>{{ jwt_aud }}</td>
         </tr>
         <tr>
           <td>Issuer (iss)</td>
-          <td>{{ verified_iss }}</td>
+          <td>{{ jwt_iss }}</td>
         </tr>
         <tr>
           <td>Hosted Domain (hd)</td>
-          <td>{{ verified_hd if verified_hd else 'Not specified' }}</td>
-        </tr>
-        <tr>
-          <td>Google Claims</td>
-          <td>{{ verified_goog if verified_goog else 'None' }}</td>
+          <td>{{ jwt_hd if jwt_hd else 'Not specified' }}</td>
         </tr>
       </table>
     </div>
     {% endif %}
 
-    <!-- Unverified JWT Debug Info -->
+    <!-- JWT Debug Info -->
     {% if iap_jwt %}
     <div class="section info">
-      <h2>🔍 JWT Debug Information (Unverified)</h2>
-      <p><em>This information is extracted without verification - for debugging only.</em></p>
+      <h2>🔍 JWT Debug Information</h2>
       
       <button type="button" class="collapsible">JWT Header</button>
       <div class="content">
