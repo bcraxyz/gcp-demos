@@ -1,5 +1,5 @@
-google-genai==1.26.0
-resend==2.11.0
+google-genai==1.61.0
+resend==2.21.0
 python-dateutil
 beautifulsoup4
 feedparser
