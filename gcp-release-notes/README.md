@@ -17,7 +17,7 @@ This script fetches Google Cloud Platform (GCP) release notes from the [official
 - `GCP_RELEASE_FEED_URL`: `https://cloud.google.com/feeds/gcp-release-notes.xml`
 - `LOOKBACK_HOURS`: `24`
 - `GOOGLE_API_KEY`: `your_gemini_api_key`
-- `GEMINI_MODEL`: `gemini-2.0-flash`
+- `GEMINI_MODEL`: `gemini-2.5-flash`
 - `RESEND_API_KEY`: `your_resend_api_key`
 - `EMAIL_FROM`: `you@example.com`
 - `EMAIL_TO`: `recipient@example.com`
